@@ -21,6 +21,14 @@ function App() {
       handleUserJoined(id);
     });
 
+    socket.on("ready", (userId) => {
+      otherUser.current = userId;
+      callUser(userId);
+
+      // 🔁 This ensures both users establish the connection
+      socket.emit("ready", roomId);
+    });
+
     socket.on("user-left", (name) => {
       setMessages(prev => [...prev, { from: "System", message: `${name} left the room` }]);
       if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
@@ -42,6 +50,7 @@ function App() {
         localVideoRef.current.srcObject = stream;
       }
       socket.emit("join-room", { roomId, userName });
+      socket.emit("ready", roomId); // 🔁 Triggers signaling
     }, 100);
   };
 
@@ -165,94 +174,56 @@ function App() {
   };
 
   return (
-  <>
-  
- {/* <div className="container-fluid d-flex justify-content-center align-items-center vh-100 bg-light ml-100px"> */}
-    {!inRoom ? (
-      <>
-
-      <div className="card p-4 shadow " style={{ width: "50%", maxWidth: "4", marginLeft:"30vw"}}>
-        <h2 className="mb-4 text fw-bold text-center" style={{color:"Black",fontFamily:" Roboto, Arial, sans-serif"}}>Real-Time Video Call and meeting for every one</h2>
-        <input
-          value={userName}
-          onChange={(e) => setUserName(e.target.value)}
-          placeholder="Enter Your Name"
-          className="form-control mb-3"
-        />
-        <input
-          value={roomId}
-          onChange={(e) => setRoomId(e.target.value)}
-          placeholder="Enter Room ID"
-          className="form-control mb-3"
-        />
-        <button onClick={joinRoom} className="btn  w-100" style={{backgroundColor:"#5496c2ff"}}>
-          Join Room
-        </button>
-      </div>
-      </>
-    ) : (
-      <>
-
-      <div className="text-center w-100 px-3" style={{marginLeft:"12vw"}}>
-        {/* Video Section */}
-        <div className="row mt-4 justify-content-center">
-          <div className="col-md-5 mb-3">
-            <video
-              ref={localVideoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-100 border rounded shadow"
-            />
+    <>
+      {!inRoom ? (
+        <div className="card p-4 shadow " style={{ width: "50%", marginLeft: "30vw" }}>
+          <h2 className="mb-4 fw-bold text-center">Real-Time Video Call and Chat</h2>
+          <input
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            placeholder="Enter Your Name"
+            className="form-control mb-3"
+          />
+          <input
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value)}
+            placeholder="Enter Room ID"
+            className="form-control mb-3"
+          />
+          <button onClick={joinRoom} className="btn btn-primary w-100">Join Room</button>
+        </div>
+      ) : (
+        <div className="text-center w-100 px-3" style={{ marginLeft: "12vw" }}>
+          <div className="row mt-4 justify-content-center">
+            <div className="col-md-5 mb-3">
+              <video ref={localVideoRef} autoPlay playsInline muted className="w-100 border rounded shadow" />
+            </div>
+            <div className="col-md-5 mb-3">
+              <video ref={remoteVideoRef} autoPlay playsInline className="w-100 border rounded shadow" />
+            </div>
           </div>
-          <div className="col-md-5 mb-3">
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-100 border rounded shadow"
-            />
+          <button onClick={leaveRoom} className="btn btn-danger my-3">Leave Room</button>
+
+          <div className="card mx-auto p-3 mt-3 shadow" style={{ maxWidth: "600px" }}>
+            <div className="border rounded p-2 mb-3" style={{ height: "200px", overflowY: "auto" }}>
+              {messages.map((msg, index) => (
+                <div key={index}><strong>{msg.from}:</strong> {msg.message}</div>
+              ))}
+            </div>
+            <div className="input-group">
+              <input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message"
+                className="form-control"
+              />
+              <button onClick={handleSendMessage} className="btn btn-success">Send</button>
+            </div>
           </div>
         </div>
-
-        {/* Leave Button */}
-        <button onClick={leaveRoom} className="btn btn-danger my-3">
-           Leave Room
-        </button>
-
-        {/* Chat Section */}
-        <div className="card mx-auto p-3 mt-3 shadow" style={{ maxWidth: "600px" }}>
-          <div
-            className="border rounded p-2 mb-3"
-            style={{ height: "200px", overflowY: "auto" }}
-          >
-            {messages.map((msg, index) => (
-              <div key={index}>
-                <strong>{msg.from}:</strong> {msg.message}
-              </div>
-            ))}
-          </div>
-
-          <div className="input-group">
-            <input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message"
-              className="form-control"
-             style={{borderRadius:"5px",borderColor:"green"}}/>
-            <button onClick={handleSendMessage} className="btn btn-success">
-              Send
-            </button>
-          </div>
-        </div>
-      </div>
-      </>
-    )}
-  {/* </div> */}
-
+      )}
     </>
-);
-
+  );
 }
 
 export default App;
