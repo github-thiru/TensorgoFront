@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import "./App.css";
 
-const socket = io("http://localhost:5000", { transports: ["websocket"] });
+const socket = io(import.meta.env.VITE_BACKEND_URL, { transports: ["websocket"] });
 
 function App() {
   const [roomId, setRoomId] = useState("");
